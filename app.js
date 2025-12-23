@@ -5,14 +5,6 @@ const path = require('path');
 
 const tasksFilePath = path.join(__dirname, 'tasks.json');
 
-const colors = {
-    reset: '\x1b[0m',
-    green: '\x1b[32m',
-    red: '\x1b[31m',
-    yellow: '\x1b[33m',
-    cyan: '\x1b[36m',
-};
-
 function readTasks() {
     if (fs.existsSync(tasksFilePath)) {
         const data = fs.readFileSync(tasksFilePath, 'utf8');
@@ -25,6 +17,7 @@ function writeTasks(tasks) {
     fs.writeFileSync(tasksFilePath, JSON.stringify(tasks, null, 2), 'utf8');
 };
 
+// GET NEXT AVAILABLE ID #, IF A TASK WAS PREVIOUSLY DELETED, IT'S ID # WILL BE REUSED
 function getNextId() {
     const tasks = readTasks();
     const allCurrentIds = tasks.map((task) => task.id);
@@ -36,10 +29,9 @@ function getNextId() {
         }
     }
     return 1;
-    
 }
-console.log(getNextId())
 
+// CREATE NEW TASK OBJ, WRITE TO TASKS.JSON
 function addTask(description) {
     const tasks = readTasks();
     const newTask = {
@@ -52,9 +44,27 @@ function addTask(description) {
     try {
         tasks.push(newTask);
         writeTasks(tasks);
-        console.log(`${colors.green}** Task Added Successfully! (ID:${newTask.id}) **${colors.reset}`);
+        console.log(`** Task Added Successfully! (ID:${newTask.id}) **`);
     } catch(e) {
-        console.log(`${colors.red}Failed to add task: ${e}${colors.reset}`)
+        console.log(`Failed to add task: ${e}`)
     }
 };
 
+// COMMAND LINE LOGIC
+const args = process.argv.slice(2);
+const command = args[0];
+const commandArgs = args.slice(1);
+
+switch (command) {
+    case "add":
+        if (!commandArgs || commandArgs.length === 0){
+            console.log(`Could not add task: you must provide a description.`);
+            break;
+        }
+
+        addTask(commandArgs.join(" "));
+        break;
+    
+    default:
+        console.log('Unknown command');
+}
