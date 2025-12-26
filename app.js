@@ -2,15 +2,34 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
-const tasksFilePath = path.join(__dirname, 'tasks.json');
+const dataDir = path.join(os.homedir(), ".task-manager");
+const tasksFilePath = path.join(dataDir, 'tasks.json');
 
-function readTasks() {
-    if (fs.existsSync(tasksFilePath)) {
-        const data = fs.readFileSync(tasksFilePath, 'utf8');
-        return JSON.parse(data);
+function ensureDataDirExists() {
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
     }
-    return [];
+}
+function readTasks() {
+    ensureDataDirExists();
+    
+    if (!fs.existsSync(tasksFilePath)) {
+        return [];
+    }
+    const fileContents = fs.readFileSync(tasksFilePath, 'utf8');
+
+    try {
+        const tasks = JSON.parse(fileContents);
+        if (!Array.isArray(tasks)){
+            return [];
+        }
+        return tasks;
+    } catch (error){
+        console.error("Warning: Could not parse tasks.json, starting with an empty task list.")
+        return [];
+    }
 };
 
 function writeTasks(tasks) {
@@ -24,7 +43,7 @@ function getNextId() {
     if (allCurrentIds) {
         for (const taskId of allCurrentIds) {
             if (!allCurrentIds.includes(taskId + 1)) {
-            return taskId + 1;
+                return taskId + 1;
             }
         }
     }
@@ -45,8 +64,8 @@ function addTask(description) {
         tasks.push(newTask);
         writeTasks(tasks);
         console.log(`** Task Added Successfully! (ID:${newTask.id}) **`);
-    } catch(e) {
-        console.log(`Failed to add task: ${e}`)
+    } catch(error) {
+        console.error(`Failed to add task: ${error}`)
     }
 };
 
